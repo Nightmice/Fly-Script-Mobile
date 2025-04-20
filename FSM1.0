@@ -1,0 +1,174 @@
+-- Fly + Noclip Script (Celular GUI)
+-- Feito por Nightmice x ChatGPT
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local cam = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+-- Variáveis
+local flySpeed = 50
+local flying = false
+local noclip = false
+local verticalForce = Vector3.zero
+
+-- Criar body movers
+local bodyVelocity = Instance.new("BodyVelocity")
+bodyVelocity.Velocity = Vector3.zero
+bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)
+
+local bodyGyro = Instance.new("BodyGyro")
+bodyGyro.CFrame = character.HumanoidRootPart.CFrame
+bodyGyro.MaxTorque = Vector3.new(100000, 100000, 100000)
+
+-- Funções de voo
+local function startFlying()
+	flying = true
+	bodyVelocity.Parent = character.HumanoidRootPart
+	bodyGyro.Parent = character.HumanoidRootPart
+	humanoid.PlatformStand = true
+end
+
+local function stopFlying()
+	flying = false
+	bodyVelocity.Parent = nil
+	bodyGyro.Parent = nil
+	humanoid.PlatformStand = false
+end
+
+-- Noclip
+RunService.Stepped:Connect(function()
+	if noclip then
+		for _, part in ipairs(character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
+end)
+
+-- GUI
+local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+screenGui.Name = "NightmiceFlyGUI"
+screenGui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", screenGui)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Size = UDim2.new(0, 220, 0, 200)
+frame.Position = UDim2.new(0.5, -110, 0.05, 0)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+-- Arredondar bordas
+local corner = Instance.new("UICorner", frame)
+corner.CornerRadius = UDim.new(0, 12)
+
+-- Título
+local titleLabel = Instance.new("TextLabel", frame)
+titleLabel.Size = UDim2.new(1, 0, 0.2, 0)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.Text = "Feito por Nightmice"
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextScaled = true
+
+-- Função de botão genérico
+local function criarBotao(nome, pos, size, parent)
+	local btn = Instance.new("TextButton", parent)
+	btn.Size = size
+	btn.Position = pos
+	btn.Text = nome
+	btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Font = Enum.Font.Gotham
+	btn.TextScaled = true
+
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0, 8)
+
+	return btn
+end
+
+-- Botões
+local flyBtn = criarBotao("Voar", UDim2.new(0.05, 0, 0.22, 0), UDim2.new(0.45, 0, 0.18, 0), frame)
+local noclipBtn = criarBotao("Noclip", UDim2.new(0.5, 0, 0.22, 0), UDim2.new(0.45, 0, 0.18, 0), frame)
+local speedUpBtn = criarBotao("Vel+", UDim2.new(0.05, 0, 0.42, 0), UDim2.new(0.45, 0, 0.15, 0), frame)
+local speedDownBtn = criarBotao("Vel-", UDim2.new(0.5, 0, 0.42, 0), UDim2.new(0.45, 0, 0.15, 0), frame)
+
+local upBtn = criarBotao("↑", UDim2.new(0.05, 0, 0.6, 0), UDim2.new(0.45, 0, 0.15, 0), frame)
+local downBtn = criarBotao("↓", UDim2.new(0.5, 0, 0.6, 0), UDim2.new(0.45, 0, 0.15, 0), frame)
+
+local speedLabel = Instance.new("TextLabel", frame)
+speedLabel.Size = UDim2.new(1, 0, 0.15, 0)
+speedLabel.Position = UDim2.new(0, 0, 0.79, 0)
+speedLabel.Text = "Velocidade: " .. flySpeed
+speedLabel.TextColor3 = Color3.new(1, 1, 1)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextScaled = true
+
+-- Botões funcionais
+flyBtn.MouseButton1Click:Connect(function()
+	if flying then
+		stopFlying()
+		flyBtn.Text = "Voar"
+	else
+		startFlying()
+		flyBtn.Text = "Parar"
+	end
+end)
+
+noclipBtn.MouseButton1Click:Connect(function()
+	noclip = not noclip
+	noclipBtn.Text = noclip and "Noclip ON" or "Noclip"
+	if not noclip then
+		for _, part in ipairs(character:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = true
+			end
+		end
+	end
+end)
+
+speedUpBtn.MouseButton1Click:Connect(function()
+	flySpeed = math.clamp(flySpeed + 25, 0, 400)
+end)
+
+speedDownBtn.MouseButton1Click:Connect(function()
+	flySpeed = math.clamp(flySpeed - 25, 0, 400)
+end)
+
+-- Subir / Descer
+upBtn.MouseButton1Click:Connect(function()
+	if flying then
+		verticalForce = Vector3.new(0, flySpeed, 0)
+		task.delay(0.3, function() verticalForce = Vector3.zero end)
+	end
+end)
+
+downBtn.MouseButton1Click:Connect(function()
+	if flying then
+		verticalForce = Vector3.new(0, -flySpeed, 0)
+		task.delay(0.3, function() verticalForce = Vector3.zero end)
+	end
+end)
+
+-- Movimento em voo
+RunService.RenderStepped:Connect(function()
+	speedLabel.Text = "Velocidade: " .. tostring(flySpeed)
+
+	if flying then
+		local moveVec = Vector3.zero
+
+		if flySpeed > 0 and humanoid.MoveDirection.Magnitude > 0 then
+			moveVec = humanoid.MoveDirection.Unit * flySpeed
+		end
+
+		bodyVelocity.Velocity = moveVec + verticalForce
+		bodyGyro.CFrame = cam.CFrame
+	end
+end)
