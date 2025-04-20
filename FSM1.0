@@ -1,4 +1,4 @@
--- Fly + Noclip Script (Celular GUI)
+-- Fly + Noclip Script (Celular GUI) 
 -- Feito por Nightmice x ChatGPT
 
 local player = game.Players.LocalPlayer
@@ -142,7 +142,7 @@ speedDownBtn.MouseButton1Click:Connect(function()
 	flySpeed = math.clamp(flySpeed - 25, 0, 400)
 end)
 
--- Subir / Descer
+-- Subir / Descer manualmente com botões
 upBtn.MouseButton1Click:Connect(function()
 	if flying then
 		verticalForce = Vector3.new(0, flySpeed, 0)
@@ -157,15 +157,17 @@ downBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Movimento em voo
+-- Movimento de voo (direção da câmera + analógico)
 RunService.RenderStepped:Connect(function()
 	speedLabel.Text = "Velocidade: " .. tostring(flySpeed)
 
 	if flying then
 		local moveVec = Vector3.zero
+		local moveDirection = humanoid.MoveDirection
 
-		if flySpeed > 0 and humanoid.MoveDirection.Magnitude > 0 then
-			moveVec = humanoid.MoveDirection.Unit * flySpeed
+		if flySpeed > 0 and moveDirection.Magnitude > 0 then
+			local camLook = cam.CFrame.LookVector.Unit
+			moveVec = camLook * flySpeed
 		end
 
 		bodyVelocity.Velocity = moveVec + verticalForce
